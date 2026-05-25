@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Yu-Gi-Oh! AI Deck Builder</title>
+<style>
+:root {
+  --bg: #1a1a2e;
+  --bg2: #16213e;
+  --bg3: #0f3460;
+  --accent: #e94560;
+  --gold: #ffd700;
+  --text: #eee;
+  --dim: #999;
+  --green: #4caf50;
+  --orange: #ff9800;
+  --purple: #9c27b0;
+  --magenta: #e91e90;
+  --cyan: #00bcd4;
+  --red: #f44336;
+  --radius: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+.header {
+  background: linear-gradient(135deg, var(--bg2), var(--bg3));
+  padding: 16px;
+  text-align: center;
+  border-bottom: 2px solid var(--accent);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header h1 { font-size: 1.3em; color: var(--gold); letter-spacing: 1px; }
+.header .sub { font-size: 0.75em; color: var(--dim); margin-top: 2px; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  background: var(--bg2);
+  border-bottom: 1px solid #333;
+  position: sticky;
+  top: 60px;
+  z-index: 99;
+}
+.tab {
+  flex: 1;
+  padding: 12px 4px;
+  text-align: center;
+  font-size: 0.8em;
+  font-weight: 600;
+  color: var(--dim);
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+}
+.tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab:hover { color: var(--text); }
+
+/* Pages */
+.page { display: none; padding: 16px; padding-bottom: 80px; }
+.page.active { display: block; }
+
+/* Form elements */
+label {
+  display: block;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--cyan);
+  margin: 14px 0 6px;
+}
+input, select, textarea {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg2);
+  border: 1px solid #444;
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 16px; /* Prevents zoom on iOS */
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23999'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+
+.hint { font-size: 0.75em; color: var(--dim); margin-top: 4px; }
+
+/* Toggle */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+.toggle-row span { font-size: 0.9em; }
+.toggle {
+  position: relative;
+  width: 50px;
+  height: 28px;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #555;
+  border-radius: 28px;
+  transition: 0.3s;
+}
+.toggle .slider:before {
+  content: "";
+  position: absolute;
+  height: 22px; width: 22px;
+  left: 3px; bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+.toggle input:checked + .slider { background: var(--accent); }
+.toggle input:checked + .slider:before { transform: translateX(22px); }
+
+/* Buttons */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1em;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: all 0.2s;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #c73d54);
+  color: white;
+}
+.btn-primary:hover { transform: scale(1.02); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-secondary {
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid #555;
+}
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold), #daa520);
+  color: #1a1a2e;
+}
+.btn-small {
+  display: inline-block;
+  width: auto;
+  padding: 8px 16px;
+  font-size: 0.85em;
+  margin: 4px;
+}
+
+/* Deck display */
+.deck-result { margin-top: 16px; }
+.deck-header {
+  background: linear-gradient(135deg, var(--bg3), var(--bg2));
+  padding: 14px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  border: 1px solid #444;
+  border-bottom: none;
+}
+.deck-header h2 { font-size: 1.1em; color: var(--gold); }
+.deck-header .info { font-size: 0.8em; color: var(--dim); margin-top: 4px; }
+.deck-section {
+  border: 1px solid #444;
+  border-top: none;
+  padding: 10px;
+  background: rgba(0,0,0,0.2);
+}
+.deck-section:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+.section-title {
+  font-size: 0.9em;
+  font-weight: 700;
+  padding: 8px 0 6px;
+  display: flex;
+  justify-content: space-between;
+}
+.card-entry {
+  padding: 8px 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.card-entry:hover { background: rgba(255,255,255,0.05); }
+.card-entry:active { background: rgba(255,255,255,0.1); }
+.card-entry:last-child { border-bottom: none; }
+.card-name { font-weight: 600; }
+.card-name.monster { color: var(--orange); }
+.card-name.spell { color: var(--green); }
+.card-name.trap { color: var(--magenta); }
+.card-name.extra { color: var(--purple); }
+.card-count { color: var(--gold); font-weight: 700; }
+.card-meta { font-size: 0.75em; color: var(--dim); margin-top: 2px; }
+.card-roles { font-size: 0.7em; color: var(--cyan); }
+.card-ban { font-size: 0.7em; padding: 1px 6px; border-radius: 4px; margin-left: 6px; }
+.card-ban.banned { background: var(--red); color: white; }
+.card-ban.limited { background: var(--orange); color: white; }
+.card-ban.semi { background: var(--cyan); color: black; }
+
+.valid-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8em;
+  font-weight: 700;
+  margin-top: 8px;
+}
+.valid-badge.valid { background: var(--green); color: white; }
+.valid-badge.invalid { background: var(--red); color: white; }
+
+/* Card detail modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 200;
+  justify-content: center;
+  align-items: flex-end;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--bg2);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 20px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal h3 { color: var(--gold); margin-bottom: 10px; }
+.modal .close-btn {
+  position: absolute;
+  top: 10px; right: 16px;
+  font-size: 1.5em;
+  color: var(--dim);
+  cursor: pointer;
+  background: none; border: none;
+}
+.modal-field { margin: 6px 0; font-size: 0.85em; }
+.modal-field .label { color: var(--cyan); font-weight: 600; }
+.modal-desc {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+
+/* Search results */
+.search-result {
+  padding: 10px;
+  border-bottom: 1px solid #333;
+  cursor: pointer;
+}
+.search-result:hover { background: rgba(255,255,255,0.05); }
+
+/* Ban list */
+.ban-tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+.ban-tab {
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 0.8em;
+  font-weight: 600;
+  background: var(--bg2);
+  border: 1px solid #444;
+  color: var(--dim);
+  cursor: pointer;
+}
+.ban-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+.ban-entry { padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85em; }
+
+/* Archetype list */
+.arch-entry {
+  display: inline-block;
+  padding: 6px 12px;
+  margin: 3px;
+  background: var(--bg2);
+  border: 1px solid #444;
+  border-radius: 20px;
+  font-size: 0.8em;
+  cursor: pointer;
+}
+.arch-entry:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--dim);
+}
+.spinner {
+  display: inline-block;
+  width: 30px; height: 30px;
+  border: 3px solid #444;
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Stats bar */
+.stats-bar {
+  display: flex;
+  justify-content: space-around;
+  padding: 8px;
+  background: var(--bg2);
+  font-size: 0.7em;
+  color: var(--dim);
+  border-bottom: 1px solid #333;
+}
+.stats-bar span { text-align: center; }
+.stats-bar .num { display: block; font-size: 1.4em; color: var(--gold); font-weight: 700; }
+
+/* Quick archetype chips */
+.quick-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip {
+  padding: 6px 12px;
+  background: var(--bg3);
+  border: 1px solid #555;
+  border-radius: 20px;
+  font-size: 0.75em;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.chip:hover, .chip:active { border-color: var(--gold); color: var(--gold); }
+
+/* Export buttons row */
+.export-row { display: flex; gap: 8px; margin-top: 12px; }
+.export-row .btn { flex: 1; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>YU-GI-OH! AI DECK BUILDER</h1>
+  <div class="sub" id="dbStatus">Loading...</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="build">Build</button>
+  <button class="tab" data-tab="search">Search</button>
+  <button class="tab" data-tab="banlist">Ban List</button>
+  <button class="tab" data-tab="archetypes">Archetypes</button>
+</div>
+
+<!-- BUILD PAGE -->
+<div class="page active" id="page-build">
+  <label>Archetype / Description</label>
+  <input type="text" id="archetype" placeholder="e.g. Blue-Eyes, salad, branded combo, stun...">
+  <div class="hint">Supports slang: salad, ba, pk, cydra, tear, lab, bewd, etc.</div>
+
+  <div class="quick-chips">
+    <span class="chip" onclick="setArch('Blue-Eyes')">Blue-Eyes</span>
+    <span class="chip" onclick="setArch('Branded')">Branded</span>
+    <span class="chip" onclick="setArch('Sky Striker')">Sky Striker</span>
+    <span class="chip" onclick="setArch('Salamangreat')">Salad</span>
+    <span class="chip" onclick="setArch('Labrynth')">Labrynth</span>
+    <span class="chip" onclick="setArch('Snake-Eye')">Snake-Eye</span>
+    <span class="chip" onclick="setArch('Swordsoul')">Swordsoul</span>
+  </div>
+
+  <label>Deck Style</label>
+  <select id="style">
+    <option value="">Auto-detect</option>
+    <option value="combo">Combo (going first)</option>
+    <option value="control">Control (traps/grind)</option>
+    <option value="midrange">Midrange (balanced)</option>
+    <option value="aggro">Aggro (going second/OTK)</option>
+    <option value="stun">Stun (floodgates)</option>
+  </select>
+
+  <label>Include Cards</label>
+  <input type="text" id="include" placeholder="ash, imperm, nib, called by...">
+  <div class="hint">Comma-separated. Supports nicknames.</div>
+
+  <label>Exclude Cards</label>
+  <input type="text" id="exclude" placeholder="maxx c, droll...">
+
+  <div class="toggle-row">
+    <span>Allow Forbidden Cards</span>
+    <label class="toggle">
+      <input type="checkbox" id="forbidden">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <label>Main Deck Size</label>
+  <select id="decksize">
+    <option value="40" selected>40 (recommended)</option>
+    <option value="42">42</option>
+    <option value="45">45</option>
+    <option value="50">50</option>
+    <option value="60">60</option>
+  </select>
+
+  <button class="btn btn-primary" onclick="buildDeck()">BUILD DECK</button>
+
+  <div id="buildLoading" class="loading" style="display:none">
+    <div class="spinner"></div>
+    <div>Building your deck...</div>
+  </div>
+
+  <div id="deckResult"></div>
+</div>
+
+<!-- SEARCH PAGE -->
+<div class="page" id="page-search">
+  <label>Search Cards</label>
+  <input type="text" id="searchQuery" placeholder="Card name, nickname, or keyword..." oninput="debounceSearch()">
+  <div class="hint">Try: ash, baronne, blue-eyes, solemn, kaiju...</div>
+  <div id="searchResults"></div>
+</div>
+
+<!-- BAN LIST PAGE -->
+<div class="page" id="page-banlist">
+  <div class="ban-tabs">
+    <button class="ban-tab active" onclick="loadBanList('banned', this)">Banned</button>
+    <button class="ban-tab" onclick="loadBanList('limited', this)">Limited</button>
+    <button class="ban-tab" onclick="loadBanList('semi', this)">Semi-Limited</button>
+  </div>
+  <div id="banResults"></div>
+</div>
+
+<!-- ARCHETYPES PAGE -->
+<div class="page" id="page-archetypes">
+  <label>Filter Archetypes</label>
+  <input type="text" id="archFilter" placeholder="Search archetypes..." oninput="filterArchetypes()">
+  <div id="archList" style="margin-top: 12px;"></div>
+</div>
+
+<!-- CARD DETAIL MODAL -->
+<div class="modal-overlay" id="cardModal" onclick="closeModal(event)">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('page-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// Init
+fetch('/api/stats').then(r => r.json()).then(d => {
+  document.getElementById('dbStatus').textContent =
+    `${d.total_cards} cards | ${d.archetypes} archetypes | ${d.banned} banned`;
+});
+
+function setArch(name) {
+  document.getElementById('archetype').value = name;
+}
+
+// Build deck
+async function buildDeck() {
+  const btn = document.querySelector('.btn-primary');
+  const loading = document.getElementById('buildLoading');
+  const result = document.getElementById('deckResult');
+
+  btn.style.display = 'none';
+  loading.style.display = 'block';
+  result.innerHTML = '';
+
+  try {
+    const resp = await fetch('/api/build', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        description: document.getElementById('archetype').value,
+        archetype: document.getElementById('archetype').value,
+        style: document.getElementById('style').value,
+        include_cards: document.getElementById('include').value,
+        exclude_cards: document.getElementById('exclude').value,
+        allow_forbidden: document.getElementById('forbidden').checked,
+        deck_size: document.getElementById('decksize').value,
+      })
+    });
+    const data = await resp.json();
+    if (data.error) {
+      result.innerHTML = `<div style="color:var(--red);padding:20px">${data.error}</div>`;
+      return;
+    }
+    renderDeck(data);
+  } catch(e) {
+    result.innerHTML = `<div style="color:var(--red);padding:20px">Error: ${e.message}</div>`;
+  } finally {
+    btn.style.display = 'block';
+    loading.style.display = 'none';
+  }
+}
+
+function renderDeck(data) {
+  const result = document.getElementById('deckResult');
+  const monsters = data.main_deck.filter(c => c.is_monster);
+  const spells = data.main_deck.filter(c => c.is_spell);
+  const traps = data.main_deck.filter(c => c.is_trap);
+  const mCount = monsters.reduce((a,c) => a+c.count, 0);
+  const sCount = spells.reduce((a,c) => a+c.count, 0);
+  const tCount = traps.reduce((a,c) => a+c.count, 0);
+
+  let html = `
+    <div class="deck-result">
+      <div class="deck-header">
+        <h2>${data.name}</h2>
+        <div class="info">Style: ${data.style} | Archetype: ${data.archetype || 'Custom'}</div>
+        <div class="info">Main: ${data.main_count} | Extra: ${data.extra_count}</div>
+        <span class="valid-badge ${data.valid?'valid':'invalid'}">${data.valid?'VALID':'INVALID'}</span>
+        ${data.errors.map(e=>`<div style="color:var(--red);font-size:0.8em;margin-top:4px">${e}</div>`).join('')}
+      </div>`;
+
+  function renderSection(title, cards, colorClass, totalCount) {
+    if (!cards.length) return '';
+    let s = `<div class="deck-section">
+      <div class="section-title"><span class="${colorClass}">${title} (${totalCount})</span></div>`;
+    for (const c of cards) {
+      const cls = c.is_extra ? 'extra' : (c.is_spell ? 'spell' : (c.is_trap ? 'trap' : 'monster'));
+      let banBadge = '';
+      if (c.ban === 'Banned') banBadge = '<span class="card-ban banned">BANNED</span>';
+      else if (c.ban === 'Limited') banBadge = '<span class="card-ban limited">Limited</span>';
+      else if (c.ban === 'Semi-Limited') banBadge = '<span class="card-ban semi">Semi</span>';
+
+      let meta = [];
+      if (c.attribute) meta.push(c.attribute);
+      if (c.race) meta.push(c.race);
+      if (c.link) meta.push('Link-'+c.link);
+      else if (c.rank) meta.push('Rank '+c.rank);
+      else if (c.level) meta.push('Lv.'+c.level);
+      if (c.atk !== null && c.atk !== undefined) {
+        if (c.link) meta.push('ATK '+c.atk);
+        else meta.push(c.atk+'/'+(c.def !== null ? c.def : '?'));
+      }
+
+      s += `<div class="card-entry" onclick='showCard(${JSON.stringify(c)})'>
+        <div><span class="card-count">${c.count > 1 ? c.count+'x ' : ''}</span><span class="card-name ${cls}">${c.name}</span>${banBadge}</div>
+        <div class="card-meta">${meta.join(' / ')}</div>
+        <div class="card-roles">${c.roles.slice(0,3).join(', ')}</div>
+      </div>`;
+    }
+    s += '</div>';
+    return s;
+  }
+
+  html += renderSection('Monsters', monsters, 'card-name monster', mCount);
+  html += renderSection('Spells', spells, 'card-name spell', sCount);
+  html += renderSection('Traps', traps, 'card-name trap', tCount);
+  if (data.extra_deck.length) {
+    html += renderSection('Extra Deck', data.extra_deck, 'card-name extra', data.extra_count);
+  }
+
+  // Export buttons
+  const mainIds = [];
+  data.main_deck.forEach(c => { for(let i=0;i<c.count;i++) mainIds.push(c.id); });
+  const extraIds = [];
+  data.extra_deck.forEach(c => { for(let i=0;i<c.count;i++) extraIds.push(c.id); });
+
+  html += `<div class="export-row">
+    <button class="btn btn-gold btn-small" onclick='exportYDK(${JSON.stringify(mainIds)}, ${JSON.stringify(extraIds)})'>Export .ydk</button>
+    <button class="btn btn-secondary btn-small" onclick='copyDeckList(${JSON.stringify(data)})'>Copy List</button>
+  </div>`;
+
+  html += '</div>';
+  result.innerHTML = html;
+  result.scrollIntoView({behavior: 'smooth'});
+}
+
+async function exportYDK(mainIds, extraIds) {
+  const resp = await fetch('/api/export', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({main_ids: mainIds, extra_ids: extraIds})
+  });
+  const blob = await resp.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'deck.ydk';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function copyDeckList(data) {
+  let text = `${data.name}\n\nMain Deck (${data.main_count}):\n`;
+  data.main_deck.forEach(c => { text += `${c.count > 1 ? c.count+'x ' : ''}${c.name}\n`; });
+  if (data.extra_deck.length) {
+    text += `\nExtra Deck (${data.extra_count}):\n`;
+    data.extra_deck.forEach(c => { text += `${c.name}\n`; });
+  }
+  navigator.clipboard.writeText(text).then(() => alert('Deck list copied!'));
+}
+
+// Card detail modal
+function showCard(card) {
+  const m = document.getElementById('modalContent');
+  const cls = card.is_extra ? 'extra' : (card.is_spell ? 'spell' : (card.is_trap ? 'trap' : 'monster'));
+  let fields = '';
+  if (card.is_monster || card.is_extra) {
+    if (card.attribute) fields += `<div class="modal-field"><span class="label">Attribute:</span> ${card.attribute}</div>`;
+    if (card.race) fields += `<div class="modal-field"><span class="label">Type:</span> ${card.race}</div>`;
+    if (card.level) fields += `<div class="modal-field"><span class="label">Level:</span> ${card.level}</div>`;
+    if (card.rank) fields += `<div class="modal-field"><span class="label">Rank:</span> ${card.rank}</div>`;
+    if (card.link) fields += `<div class="modal-field"><span class="label">Link:</span> ${card.link}</div>`;
+    if (card.atk !== null) fields += `<div class="modal-field"><span class="label">ATK:</span> ${card.atk}</div>`;
+    if (card.def !== null) fields += `<div class="modal-field"><span class="label">DEF:</span> ${card.def}</div>`;
+  }
+  if (card.archetype) fields += `<div class="modal-field"><span class="label">Archetype:</span> ${card.archetype}</div>`;
+  fields += `<div class="modal-field"><span class="label">Ban Status:</span> ${card.ban}</div>`;
+  if (card.roles && card.roles.length) fields += `<div class="modal-field"><span class="label">Roles:</span> ${card.roles.join(', ')}</div>`;
+
+  m.innerHTML = `
+    <h3 class="card-name ${cls}">${card.name}</h3>
+    <div class="modal-field"><span class="label">Card Type:</span> ${card.type}</div>
+    ${fields}
+    <div class="modal-desc">${card.desc || 'No description available.'}</div>
+    <button class="btn btn-secondary" onclick="document.getElementById('cardModal').classList.remove('show')" style="margin-top:16px">Close</button>
+  `;
+  document.getElementById('cardModal').classList.add('show');
+}
+
+function closeModal(e) {
+  if (e.target.id === 'cardModal') {
+    document.getElementById('cardModal').classList.remove('show');
+  }
+}
+
+// Search
+let searchTimeout;
+function debounceSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(doSearch, 300);
+}
+
+async function doSearch() {
+  const q = document.getElementById('searchQuery').value;
+  if (q.length < 2) { document.getElementById('searchResults').innerHTML = ''; return; }
+
+  const resp = await fetch('/api/search?q=' + encodeURIComponent(q));
+  const data = await resp.json();
+  let html = '';
+
+  if (data.best_match) {
+    const c = data.best_match;
+    const cls = c.type.includes('Spell') ? 'spell' : (c.type.includes('Trap') ? 'trap' : 'monster');
+    html += `<div class="search-result" onclick='showCard(${JSON.stringify(c)})' style="background:rgba(255,215,0,0.05);border:1px solid var(--gold);border-radius:var(--radius);margin:12px 0;padding:12px">
+      <div style="font-size:0.7em;color:var(--gold);margin-bottom:4px">BEST MATCH</div>
+      <div class="card-name ${cls}" style="font-size:1em">${c.name}</div>
+      <div class="card-meta">${c.type} ${c.archetype ? '('+c.archetype+')' : ''}</div>
+      <div class="card-roles">${c.roles.join(', ')}</div>
+    </div>`;
+  }
+
+  for (const c of data.results) {
+    const cls = c.type.includes('Spell') ? 'spell' : (c.type.includes('Trap') ? 'trap' : (c.type.includes('Fusion')||c.type.includes('Synchro')||c.type.includes('XYZ')||c.type.includes('Link') ? 'extra' : 'monster'));
+    let banBadge = '';
+    if (c.ban === 'Banned') banBadge = '<span class="card-ban banned">BANNED</span>';
+    else if (c.ban === 'Limited') banBadge = '<span class="card-ban limited">Limited</span>';
+    html += `<div class="search-result" onclick='showCard(${JSON.stringify(c)})'>
+      <span class="card-name ${cls}">${c.name}</span>${banBadge}
+      <div class="card-meta">${c.type} ${c.archetype ? '| '+c.archetype : ''}</div>
+    </div>`;
+  }
+
+  document.getElementById('searchResults').innerHTML = html || '<div style="padding:20px;color:var(--dim)">No results found.</div>';
+}
+
+// Ban list
+async function loadBanList(category, btn) {
+  document.querySelectorAll('.ban-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const resp = await fetch('/api/banlist?category=' + category);
+  const data = await resp.json();
+  const list = data.banned || data.limited || data.semi_limited || [];
+  let html = '';
+  for (const c of list) {
+    const cls = c.type.includes('Spell') ? 'spell' : (c.type.includes('Trap') ? 'trap' : 'monster');
+    html += `<div class="ban-entry"><span class="card-name ${cls}">${c.name}</span> <span class="card-meta">${c.type}</span></div>`;
+  }
+  document.getElementById('banResults').innerHTML = html || '<div style="padding:20px;color:var(--dim)">None in this category.</div>';
+}
+
+// Archetypes
+let allArchetypes = [];
+async function loadArchetypes() {
+  const resp = await fetch('/api/archetypes');
+  const data = await resp.json();
+  allArchetypes = data.archetypes;
+  renderArchetypes(allArchetypes);
+}
+
+function filterArchetypes() {
+  const q = document.getElementById('archFilter').value.toLowerCase();
+  renderArchetypes(allArchetypes.filter(a => a.name.toLowerCase().includes(q)));
+}
+
+function renderArchetypes(list) {
+  document.getElementById('archList').innerHTML = list.map(a =>
+    `<span class="arch-entry" onclick="document.querySelectorAll('.tab')[0].click(); setArch('${a.name}')">${a.name} (${a.count})</span>`
+  ).join('');
+}
+
+// Init ban list and archetypes
+loadBanList('banned', document.querySelector('.ban-tab'));
+loadArchetypes();
+</script>
+</body>
+</html>

@@ -8,15 +8,19 @@ An intelligent Yu-Gi-Oh! deck builder that constructs competitive decks using th
 # Install dependencies
 pip3 install -r requirements.txt
 
-# Run the deck builder
+# Run the web app (works on phone!)
+python3 app.py
+
+# Or run the terminal CLI
 python3 main.py
 ```
 
-Or use the setup script:
-```bash
-chmod +x setup.sh && ./setup.sh
-python3 main.py
-```
+### Use on Your Phone
+
+1. Run `python3 app.py` on your computer
+2. Open `http://<your-computer-ip>:5000` on your phone's browser
+3. Both devices must be on the same WiFi network
+4. The app will show your local IP address when it starts
 
 ## Features
 
