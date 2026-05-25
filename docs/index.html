@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1a2e">
+<title>Yu-Gi-Oh! AI Deck Builder</title>
+<style>
+:root{--bg:#1a1a2e;--bg2:#16213e;--bg3:#0f3460;--accent:#e94560;--gold:#ffd700;--text:#eee;--dim:#888;--green:#4caf50;--orange:#ff9800;--purple:#b048d4;--magenta:#e91e90;--cyan:#00bcd4;--red:#f44336;--r:12px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;overflow-x:hidden}
+.hdr{background:linear-gradient(135deg,var(--bg2),var(--bg3));padding:14px 16px;text-align:center;border-bottom:2px solid var(--accent);position:sticky;top:0;z-index:100}
+.hdr h1{font-size:1.2em;color:var(--gold);letter-spacing:1px}
+.hdr .sub{font-size:.7em;color:var(--dim);margin-top:2px}
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid #333;position:sticky;top:52px;z-index:99}
+.tab{flex:1;padding:11px 2px;text-align:center;font-size:.75em;font-weight:700;color:var(--dim);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;transition:.2s}
+.tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+.pg{display:none;padding:14px;padding-bottom:100px}.pg.on{display:block}
+label{display:block;font-size:.82em;font-weight:700;color:var(--cyan);margin:12px 0 5px}
+input,select,textarea{width:100%;padding:11px;background:var(--bg2);border:1px solid #444;border-radius:var(--r);color:var(--text);font-size:16px}
+input:focus,select:focus{outline:none;border-color:var(--gold)}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23999'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.hint{font-size:.72em;color:var(--dim);margin-top:3px}
+.trow{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
+.trow span{font-size:.88em}
+.tgl{position:relative;width:48px;height:26px;flex-shrink:0}
+.tgl input{opacity:0;width:0;height:0}
+.tgl .sl{position:absolute;cursor:pointer;inset:0;background:#555;border-radius:26px;transition:.3s}
+.tgl .sl:before{content:"";position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.tgl input:checked+.sl{background:var(--accent)}
+.tgl input:checked+.sl:before{transform:translateX(22px)}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:var(--r);font-size:1em;font-weight:700;cursor:pointer;margin-top:14px;transition:.15s}
+.btn:active{transform:scale(.97)}
+.bp{background:linear-gradient(135deg,var(--accent),#c73d54);color:#fff}
+.bs{background:var(--bg3);color:var(--text);border:1px solid #555}
+.bg{background:linear-gradient(135deg,var(--gold),#daa520);color:#1a1a2e}
+.bsm{display:inline-block;width:auto;padding:8px 14px;font-size:.82em;margin:4px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.chip{padding:5px 11px;background:var(--bg3);border:1px solid #555;border-radius:20px;font-size:.73em;cursor:pointer;transition:.15s;color:var(--text)}
+.chip:active{border-color:var(--gold);color:var(--gold)}
+.dh{background:linear-gradient(135deg,var(--bg3),var(--bg2));padding:12px;border-radius:var(--r) var(--r) 0 0;border:1px solid #444;border-bottom:none;margin-top:16px}
+.dh h2{font-size:1.05em;color:var(--gold)}.dh .i{font-size:.78em;color:var(--dim);margin-top:3px}
+.ds{border:1px solid #444;border-top:none;padding:8px;background:rgba(0,0,0,.2)}
+.ds:last-of-type{border-radius:0 0 var(--r) var(--r)}
+.st{font-size:.88em;font-weight:700;padding:7px 0 5px}
+.ce{padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.04);font-size:.83em;cursor:pointer}
+.ce:active{background:rgba(255,255,255,.08)}
+.cn{font-weight:600}.cn.m{color:var(--orange)}.cn.s{color:var(--green)}.cn.t{color:var(--magenta)}.cn.x{color:var(--purple)}
+.cc{color:var(--gold);font-weight:700}
+.cm{font-size:.72em;color:var(--dim);margin-top:1px}
+.cr{font-size:.68em;color:var(--cyan)}
+.cb{font-size:.68em;padding:1px 5px;border-radius:3px;margin-left:4px;color:#fff}
+.cb.bd{background:var(--red)}.cb.lt{background:var(--orange)}.cb.sm{background:var(--cyan);color:#000}
+.vb{display:inline-block;padding:3px 10px;border-radius:16px;font-size:.78em;font-weight:700;margin-top:6px}
+.vb.v{background:var(--green);color:#fff}.vb.iv{background:var(--red);color:#fff}
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;justify-content:center;align-items:flex-end}
+.mo.sh{display:flex}
+.md{background:var(--bg2);border-radius:var(--r) var(--r) 0 0;padding:18px;width:100%;max-width:500px;max-height:80vh;overflow-y:auto;animation:su .25s ease}
+@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.md h3{color:var(--gold);margin-bottom:8px}
+.mf{margin:5px 0;font-size:.83em}.mf .lb{color:var(--cyan);font-weight:600}
+.mdesc{margin-top:8px;padding:10px;background:rgba(0,0,0,.3);border-radius:8px;font-size:.83em;line-height:1.5}
+.sr{padding:10px;border-bottom:1px solid #333;cursor:pointer}.sr:active{background:rgba(255,255,255,.06)}
+.btabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+.bt{padding:7px 13px;border-radius:18px;font-size:.78em;font-weight:600;background:var(--bg2);border:1px solid #444;color:var(--dim);cursor:pointer}
+.bt.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.be{padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.04);font-size:.83em}
+.ae{display:inline-block;padding:5px 10px;margin:2px;background:var(--bg2);border:1px solid #444;border-radius:18px;font-size:.78em;cursor:pointer}
+.ae:active{border-color:var(--gold);color:var(--gold)}
+.ld{text-align:center;padding:40px;color:var(--dim)}
+.sp{display:inline-block;width:28px;height:28px;border:3px solid #444;border-top-color:var(--gold);border-radius:50%;animation:rr .8s linear infinite;margin-bottom:8px}
+@keyframes rr{to{transform:rotate(360deg)}}
+.er{display:flex;gap:6px;margin-top:10px}.er .btn{flex:1}
+.sb{display:flex;justify-content:space-around;padding:6px;background:var(--bg2);font-size:.68em;color:var(--dim);border-bottom:1px solid #333}
+.sb .n{display:block;font-size:1.4em;color:var(--gold);font-weight:700}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:10px 20px;border-radius:20px;font-size:.85em;z-index:300;animation:fd 2s forwards}
+@keyframes fd{0%,70%{opacity:1}100%{opacity:0}}
+</style>
+</head>
+<body>
+<div class="hdr"><h1>YU-GI-OH! AI DECK BUILDER</h1><div class="sub" id="st">Loading cards...</div></div>
+<div class="tabs">
+<button class="tab on" data-t="build">Build</button>
+<button class="tab" data-t="search">Search</button>
+<button class="tab" data-t="ban">Ban List</button>
+<button class="tab" data-t="arch">Archetypes</button>
+</div>
+
+<div class="pg on" id="pg-build">
+<label>Archetype / Description</label>
+<input type="text" id="inp-arch" placeholder="e.g. Blue-Eyes, salad, branded, stun...">
+<div class="hint">Slang works: salad, ba, pk, cydra, tear, lab, bewd, snake eyes...</div>
+<div class="chips" id="qchips"></div>
+<label>Deck Style</label>
+<select id="inp-style">
+<option value="">Auto-detect</option>
+<option value="COMBO">Combo (going first)</option>
+<option value="CONTROL">Control (traps/grind)</option>
+<option value="MIDRANGE">Midrange (balanced)</option>
+<option value="AGGRO">Aggro (going second/OTK)</option>
+<option value="STUN">Stun (floodgates)</option>
+</select>
+<label>Include Cards</label>
+<input type="text" id="inp-inc" placeholder="ash, imperm, nib, called by...">
+<div class="hint">Comma-separated, supports nicknames</div>
+<label>Exclude Cards</label>
+<input type="text" id="inp-exc" placeholder="maxx c, droll...">
+<div class="trow"><span>Allow Forbidden Cards</span><label class="tgl"><input type="checkbox" id="inp-fb"><span class="sl"></span></label></div>
+<label>Main Deck Size</label>
+<select id="inp-sz"><option value="40" selected>40</option><option value="42">42</option><option value="45">45</option><option value="50">50</option><option value="60">60</option></select>
+<button class="btn bp" id="buildBtn" onclick="doBuild()">BUILD DECK</button>
+<div id="bld-ld" class="ld" style="display:none"><div class="sp"></div><div>Building deck...</div></div>
+<div id="deck-out"></div>
+</div>
+
+<div class="pg" id="pg-search">
+<label>Search Cards</label>
+<input type="text" id="sq" placeholder="Card name or nickname..." oninput="debSearch()">
+<div class="hint">Try: ash, baronne, blue-eyes, kaiju, solemn...</div>
+<div id="sres"></div>
+</div>
+
+<div class="pg" id="pg-ban">
+<div class="btabs">
+<button class="bt on" onclick="showBan('Banned',this)">Banned</button>
+<button class="bt" onclick="showBan('Limited',this)">Limited</button>
+<button class="bt" onclick="showBan('Semi-Limited',this)">Semi-Limited</button>
+</div>
+<div id="bres"></div>
+</div>
+
+<div class="pg" id="pg-arch">
+<label>Filter</label>
+<input type="text" id="af" placeholder="Search archetypes..." oninput="filterArch()">
+<div id="alist" style="margin-top:10px"></div>
+</div>
+
+<div class="mo" id="cmod" onclick="if(event.target===this)this.classList.remove('sh')">
+<div class="md" id="mcon"></div>
+</div>
+
+<script>
+const SLANG={
+"ash":"Ash Blossom & Joyous Spring","ash blossom":"Ash Blossom & Joyous Spring",
+"ogre":"Ghost Ogre & Snow Rabbit","ghost ogre":"Ghost Ogre & Snow Rabbit",
+"belle":"Ghost Belle & Haunted Mansion","ghost belle":"Ghost Belle & Haunted Mansion",
+"mourner":"Ghost Mourner & Moonlit Chill",
+"veiler":"Effect Veiler","nib":"Nibiru, the Primal Being","nibiru":"Nibiru, the Primal Being",
+"imperm":"Infinite Impermanence","imperma":"Infinite Impermanence","impermanence":"Infinite Impermanence",
+"maxx c":'Maxx "C"',"maxx":'Maxx "C"',
+"dd crow":"D.D. Crow","crow":"D.D. Crow",
+"droll":"Droll & Lock Bird","droll and lock":"Droll & Lock Bird",
+"lancea":"Artifact Lancea","gamma":"PSY-Framegear Gamma","driver":"PSY-Frame Driver",
+"d shifter":"Dimension Shifter","shifter":"Dimension Shifter","dimension shifter":"Dimension Shifter",
+"skull meister":"Skull Meister","token collector":"Token Collector",
+"fuwalos":"Mulcharmy Fuwalos","purulia":"Mulcharmy Purulia","nyalus":"Mulcharmy Nyalus",
+"called by":"Called by the Grave","cbtg":"Called by the Grave","called":"Called by the Grave",
+"crossout":"Crossout Designator","droplet":"Forbidden Droplet","forbidden droplet":"Forbidden Droplet",
+"chalice":"Forbidden Chalice",
+"hfd":"Harpie's Feather Duster","feather duster":"Harpie's Feather Duster","duster":"Harpie's Feather Duster",
+"raigeki":"Raigeki","dark hole":"Dark Hole",
+"lightning storm":"Lightning Storm","lstorm":"Lightning Storm",
+"mst":"Mystical Space Typhoon","twin twister":"Twin Twisters","tt":"Twin Twisters",
+"cosmic":"Cosmic Cyclone",
+"desires":"Pot of Desires","extrav":"Pot of Extravagance","extravagance":"Pot of Extravagance",
+"prosperity":"Pot of Prosperity","prosp":"Pot of Prosperity","upstart":"Upstart Goblin",
+"terra":"Terraforming","terraforming":"Terraforming",
+"foolish":"Foolish Burial","foolish goods":"Foolish Burial Goods",
+"rota":"Reinforcement of the Army","e tele":"Emergency Teleport",
+"monster reborn":"Monster Reborn","reborn":"Monster Reborn",
+"super poly":"Super Polymerization","book of moon":"Book of Moon","bom":"Book of Moon",
+"ttt":"Triple Tactics Talent","triple tactics":"Triple Tactics Talent",
+"small world":"Small World","change of heart":"Change of Heart",
+"judgment":"Solemn Judgment","solemn judgment":"Solemn Judgment","solemn j":"Solemn Judgment",
+"warning":"Solemn Warning","strike":"Solemn Strike","solemn strike":"Solemn Strike",
+"torrential":"Torrential Tribute","bottomless":"Bottomless Trap Hole","bth":"Bottomless Trap Hole",
+"compulse":"Compulsory Evacuation Device",
+"evenly":"Evenly Matched","evenly matched":"Evenly Matched",
+"ice dragon":"Ice Dragon's Prison","trap trick":"Trap Trick",
+"skill drain":"Skill Drain","rivalry":"Rivalry of Warlords","gozen":"Gozen Match",
+"tcboo":"There Can Be Only One","there can be only one":"There Can Be Only One",
+"anti-spell":"Anti-Spell Fragrance","anti spell":"Anti-Spell Fragrance",
+"imperial order":"Imperial Order","io":"Imperial Order",
+"vanitys":"Vanity's Emptiness","macro":"Macro Cosmos","macro cosmos":"Macro Cosmos",
+"d fissure":"Dimensional Fissure","dimensional fissure":"Dimensional Fissure",
+"accesscode":"Accesscode Talker","unicorn":"Knightmare Unicorn","phoenix":"Knightmare Phoenix",
+"cerberus":"Knightmare Cerberus","masquerena":"I:P Masquerena","ip":"I:P Masquerena",
+"baronne":"Baronne de Fleur","baroness":"Baronne de Fleur",
+"savage":"Borreload Savage Dragon","borreload savage":"Borreload Savage Dragon",
+"apollousa":"Apollousa, Bow of the Goddess","apo":"Apollousa, Bow of the Goddess",
+"zeus":"Divine Arsenal AA-ZEUS - Sky Thunder","aa zeus":"Divine Arsenal AA-ZEUS - Sky Thunder",
+"dweller":"Abyss Dweller","castel":"Castel, the Skyblaster Musketeer",
+"crystal wing":"Crystal Wing Synchro Dragon","omega":"PSY-Framelord Omega",
+"arc light":"Herald of Arc Light","stardust":"Stardust Dragon",
+"underworld goddess":"Underworld Goddess of the Closed World",
+"s:p little knight":"S:P Little Knight","sp little knight":"S:P Little Knight","little knight":"S:P Little Knight",
+"linkuriboh":"Linkuriboh","almiraj":"Salamangreat Almiraj","linguriboh":"Linguriboh",
+"ntss":"Elder Entity N'tss","n'tss":"Elder Entity N'tss",
+"bagooska":"Number 41: Bagooska the Terribly Tired Tapir",
+"winda":"El Shaddoll Winda","mechaba":"Invoked Mechaba",
+};
+
+const ARCH_ALIAS={
+"salad":"Salamangreat","salads":"Salamangreat","zoo":"Zoodiac",
+"ba":"Burning Abyss","pk":"The Phantom Knights","phantom knights":"The Phantom Knights",
+"vw":"Virtual World","td":"Thunder Dragon","thundra":"Thunder Dragon",
+"cydra":"Cyber Dragon","dm":"Dark Magician","bewd":"Blue-Eyes","blue eyes":"Blue-Eyes",
+"ss":"Swordsoul","tri":"Tri-Brigade","trib":"Tri-Brigade",
+"adam":"Adamancipator","eld":"Eldlich","dolls":"Shaddoll",
+"striker":"Sky Striker","pranks":"Prank-Kids","dogma":"Dogmatika",
+"heroes":"HERO","hero":"HERO","e hero":"Elemental HERO","d hero":"Destiny HERO",
+"dino":"Dinosaur","dinos":"Dinosaur","tear":"Tearlaments","tears":"Tearlaments",
+"kash":"Kashtira","lab":"Labrynth","shs":"Superheavy Samurai",
+"centurion":"Centur-Ion","snake eye":"Snake-Eye","snake eyes":"Snake-Eye",
+"voiceless":"Voiceless Voice","tenpai":"Tenpai Dragon","rescue ace":"Rescue-ACE",
+};
+
+const STYLE_KW={"going second":"AGGRO","go second":"AGGRO","going first":"COMBO","go first":"COMBO","one turn kill":"AGGRO","anti-meta":"STUN","anti meta":"STUN","combo":"COMBO","otk":"AGGRO","aggro":"AGGRO","aggressive":"AGGRO","beatdown":"AGGRO","control":"CONTROL","grind":"CONTROL","stun":"STUN","floodgate deck":"STUN","lock":"STUN","midrange":"MIDRANGE","balanced":"MIDRANGE"};
+
+const ARCH_STYLES={"Swordsoul":"MIDRANGE","Branded":"MIDRANGE","Despia":"MIDRANGE","Tri-Brigade":"MIDRANGE","Sky Striker":"CONTROL","Eldlich":"CONTROL","Altergeist":"CONTROL","Salamangreat":"MIDRANGE","Adamancipator":"COMBO","Drytron":"COMBO","Virtual World":"COMBO","Prank-Kids":"COMBO","Zoodiac":"MIDRANGE","Burning Abyss":"MIDRANGE","The Phantom Knights":"COMBO","Thunder Dragon":"COMBO","Dinosaur":"COMBO","HERO":"COMBO","Cyber Dragon":"COMBO","Shaddoll":"MIDRANGE","Invoked":"CONTROL","Dark Magician":"CONTROL","Blue-Eyes":"MIDRANGE","Orcust":"COMBO","Dogmatika":"CONTROL","Tearlaments":"COMBO","Kashtira":"CONTROL","Spright":"COMBO","Marincess":"COMBO","Labrynth":"CONTROL","Purrely":"CONTROL","Mathmech":"COMBO","Runick":"CONTROL","Rescue-ACE":"CONTROL","Superheavy Samurai":"COMBO","Centur-Ion":"COMBO","Snake-Eye":"COMBO","Fiendsmith":"COMBO","Voiceless Voice":"CONTROL","Tenpai Dragon":"AGGRO"};
+
+const RATIOS={
+COMBO:{ht:[6,12],bb:[0,3],traps:[0,4]},
+CONTROL:{ht:[6,9],bb:[2,6],traps:[8,16]},
+MIDRANGE:{ht:[6,12],bb:[2,4],traps:[4,10]},
+AGGRO:{ht:[3,6],bb:[4,8],traps:[0,4]},
+STUN:{ht:[3,6],bb:[0,3],traps:[12,20]},
+};
+
+const KNOWN_HT=new Set(["Ash Blossom & Joyous Spring","Ghost Ogre & Snow Rabbit","Ghost Belle & Haunted Mansion","Ghost Mourner & Moonlit Chill","Effect Veiler",'Maxx "C"',"Nibiru, the Primal Being","D.D. Crow","Droll & Lock Bird","Artifact Lancea","PSY-Framegear Gamma","Dimension Shifter","Skull Meister","Token Collector","Mulcharmy Fuwalos","Mulcharmy Purulia","Mulcharmy Nyalus","Fantastical Dragon Phantazmay"]);
+
+const KNOWN_FL=new Set(["Skill Drain","Imperial Order","Rivalry of Warlords","Gozen Match","There Can Be Only One","Anti-Spell Fragrance","Vanity's Emptiness","Macro Cosmos","Dimensional Fissure","Summon Limit","Inspector Boarder","Amano-Iwato","Denko Sekka","Majesty's Fiend","Vanity's Fiend"]);
+
+const ED_TYPES=new Set(["Fusion Monster","Synchro Monster","XYZ Monster","Link Monster","Synchro Tuner Monster","Synchro Pendulum Effect Monster","XYZ Pendulum Effect Monster","Fusion Pendulum Effect Monster"]);
+
+const HT_LIST=[["Ash Blossom & Joyous Spring",3],["Effect Veiler",3],["Infinite Impermanence",3],["Nibiru, the Primal Being",3],["Ghost Ogre & Snow Rabbit",3],["Droll & Lock Bird",3],["Ghost Belle & Haunted Mansion",3],["D.D. Crow",3],["Artifact Lancea",3],["PSY-Framegear Gamma",3],["Dimension Shifter",3],["Ghost Mourner & Moonlit Chill",3],["Skull Meister",3],["Mulcharmy Fuwalos",3],["Mulcharmy Purulia",3],["Mulcharmy Nyalus",3],['Maxx "C"',3]];
+const BB_LIST=[["Lightning Storm",3],["Harpie's Feather Duster",1],["Raigeki",1],["Dark Hole",3],["Forbidden Droplet",3],["Super Polymerization",3],["Evenly Matched",3],["Triple Tactics Talent",3],["Book of Moon",3],["Cosmic Cyclone",3],["Twin Twisters",3],["Lava Golem",3]];
+const AH_LIST=[["Called by the Grave",1],["Crossout Designator",3],["Triple Tactics Talent",3]];
+const TR_LIST=[["Solemn Judgment",3],["Solemn Strike",3],["Torrential Tribute",3],["Bottomless Trap Hole",3],["Compulsory Evacuation Device",3],["Ice Dragon's Prison",3]];
+const FL_LIST=[["Skill Drain",3],["Rivalry of Warlords",3],["Gozen Match",3],["There Can Be Only One",3],["Anti-Spell Fragrance",3],["Macro Cosmos",3],["Dimensional Fissure",3],["Summon Limit",3]];
+const POT_LIST=[["Pot of Desires",3],["Pot of Extravagance",3],["Pot of Prosperity",3],["Pot of Duality",3],["Upstart Goblin",1]];
+const ED_LINK=[["Accesscode Talker",1],["Knightmare Unicorn",1],["Knightmare Phoenix",1],["Knightmare Cerberus",1],["I:P Masquerena",1],["S:P Little Knight",1],["Apollousa, Bow of the Goddess",1],["Underworld Goddess of the Closed World",1],["Salamangreat Almiraj",1],["Linkuriboh",1],["Relinquished Anima",1],["Linguriboh",1]];
+const ED_XYZ=[["Divine Arsenal AA-ZEUS - Sky Thunder",1],["Abyss Dweller",1],["Number 41: Bagooska the Terribly Tired Tapir",1],["Castel, the Skyblaster Musketeer",1],["Time Thief Redoer",1]];
+const ED_SYN=[["Baronne de Fleur",1],["Borreload Savage Dragon",1],["Crystal Wing Synchro Dragon",1],["PSY-Framelord Omega",1],["Herald of Arc Light",1]];
+const ED_FUS=[["Elder Entity N'tss",1],["Mudragon of the Swamp",1],["Starving Venom Fusion Dragon",1],["Predaplant Dragostapelia",1],["Garura, Wings of Resonant Life",1]];
+
+const QUICK_ARCHS=["Blue-Eyes","Branded","Sky Striker","Salamangreat","Labrynth","Snake-Eye","Swordsoul","Dark Magician","HERO","Cyber Dragon","Kashtira","Tearlaments","Dinosaur","Eldlich"];
+
+let allCards=[];
+let byName={};
+let byArch={};
+let archList=[];
+let dbReady=false;
+
+const API="https://db.ygoprodeck.com/api/v7";
+
+function isExtra(c){return ED_TYPES.has(c.type)}
+function isSpell(c){return c.type.includes("Spell")&&!c.type.includes("Monster")}
+function isTrap(c){return c.type.includes("Trap")&&!c.type.includes("Monster")}
+function isMonster(c){return!isSpell(c)&&!isTrap(c)}
+function cardLv(c){return c.level||c.rank||c.linkval||0}
+
+function banSt(c){
+  const b=c.banlist_info||{};
+  return b.ban_tcg||"Unlimited";
+}
+
+function maxCopies(c,allowFb){
+  if(allowFb)return 3;
+  const b=banSt(c);
+  if(b==="Banned")return 0;
+  if(b==="Limited")return 1;
+  if(b==="Semi-Limited")return 2;
+  return 3;
+}
+
+function classifyRoles(c){
+  const r=[];const d=c.desc||"";
+  if(KNOWN_HT.has(c.name))r.push("Hand Trap");
+  if(KNOWN_FL.has(c.name))r.push("Floodgate");
+  if(/add .* from (?:your |the )?(?:Deck|GY) to (?:your |the )?hand/i.test(d))r.push("Searcher");
+  if(/(?:if|when) (?:this card is )?(?:Normal |Special )?Summon/i.test(d))r.push("Starter");
+  if(/Special Summon (?:this card|itself) from (?:your |the )?hand/i.test(d)||/you can Special Summon this card/i.test(d))r.push("Extender");
+  if(/negate (?:the activation|that effect|its effects?|the effect|the Summon)/i.test(d)||/your opponent cannot activate/i.test(d))r.push("Negation");
+  if(/destroy all (?:Spell|Trap|monsters?|cards?)/i.test(d)||/banish all/i.test(d))r.push("Board Breaker");
+  if(/draw \d+ cards?/i.test(d)||/excavate the top/i.test(d))r.push("Draw");
+  if(/destroy (?:1|that) .* (?:card|monster)/i.test(d)||/banish (?:1|that) .* (?:card|monster)/i.test(d))r.push("Removal");
+  if(/cannot be (?:destroyed|targeted)/i.test(d)||/unaffected by/i.test(d))r.push("Protection");
+  if(/(?:your opponent |neither player )cannot (?:Special Summon|activate|Normal Summon)/i.test(d)||/each player can only/i.test(d)||/neither player can/i.test(d)){if(!r.includes("Floodgate"))r.push("Floodgate")}
+  if(/Special Summon .* from (?:your |the )?(?:GY|Graveyard)/i.test(d))r.push("Recovery");
+  if(isExtra(c)&&cardLv(c)>=7&&r.includes("Negation")&&!r.includes("Boss"))r.push("Boss Monster");
+  if(!r.length)r.push(c.archetype?"Archetype Core":"Generic");
+  return[...new Set(r)];
+}
+
+function roleScore(roles){
+  const sc={Searcher:10,Starter:9,"Boss Monster":8.5,Negation:8,Extender:7.5,"Hand Trap":7,Draw:6.5,"Board Breaker":6,Floodgate:5.5,Removal:5,Recovery:4.5,Protection:4,"Archetype Core":3,Generic:1};
+  let s=0;for(const r of roles)s+=(sc[r]||1);
+  if(roles.length>1)s+=roles.length*1.5;
+  return s;
+}
+
+async function fetchJSON(url){
+  const r=await fetch(url);
+  if(!r.ok)throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+async function loadDB(){
+  const cached=localStorage.getItem("ygo_cards_ts");
+  const now=Date.now();
+  if(cached&&(now-parseInt(cached))<7*86400000){
+    try{
+      const d=JSON.parse(localStorage.getItem("ygo_cards"));
+      if(d&&d.length>100){indexCards(d);return}
+    }catch(e){}
+  }
+  try{
+    setSt("Downloading card database...");
+    const d=await fetchJSON(API+"/cardinfo.php?misc=yes");
+    const cards=d.data||[];
+    indexCards(cards);
+    try{localStorage.setItem("ygo_cards",JSON.stringify(cards));localStorage.setItem("ygo_cards_ts",""+now)}catch(e){}
+    setSt(`${allCards.length} cards loaded`);
+  }catch(e){
+    setSt("API unavailable - loading cached data...");
+    try{
+      const d=JSON.parse(localStorage.getItem("ygo_cards"));
+      if(d&&d.length)indexCards(d);
+      else setSt("No cached data. Please refresh when online.");
+    }catch(e2){setSt("No data available. Please refresh when online.")}
+  }
+}
+
+function indexCards(cards){
+  allCards=cards;byName={};byArch={};
+  const archSet=new Set();
+  for(const c of cards){
+    byName[c.name]=c;
+    byName[c.name.toLowerCase()]=c;
+    if(c.archetype){
+      if(!byArch[c.archetype])byArch[c.archetype]=[];
+      byArch[c.archetype].push(c);
+      archSet.add(c.archetype);
+    }
+  }
+  archList=[...archSet].sort();
+  dbReady=true;
+  setSt(`${allCards.length} cards | ${archList.length} archetypes`);
+  renderArchList(archList);
+  showBan("Banned",document.querySelector(".bt.on"));
+  renderQuickChips();
+}
+
+function setSt(t){document.getElementById("st").textContent=t}
+
+function resolveCard(q){
+  if(!q)return null;
+  let c=byName[q]||byName[q.toLowerCase()];
+  if(c)return c;
+  const sl=SLANG[q.toLowerCase()];
+  if(sl)c=byName[sl];
+  if(c)return c;
+  const ql=q.toLowerCase();
+  let best=null,bestS=0;
+  for(const name in byName){
+    if(typeof byName[name]!=="object"||!byName[name].id)continue;
+    const nl=name.toLowerCase();
+    if(nl===ql)return byName[name];
+    if(nl.includes(ql)){
+      const s=ql.length/nl.length;
+      if(s>bestS){bestS=s;best=byName[name]}
+    }
+  }
+  return bestS>0.3?best:null;
+}
+
+function resolveArch(q){
+  if(!q)return null;
+  if(byArch[q])return q;
+  const al=ARCH_ALIAS[q.toLowerCase()];
+  if(al&&byArch[al])return al;
+  const ql=q.toLowerCase();
+  for(const a of archList)if(a.toLowerCase()===ql)return a;
+  for(const a of archList)if(a.toLowerCase().includes(ql))return a;
+  return null;
+}
+
+function detectStyle(desc){
+  const l=desc.toLowerCase();
+  for(const[k,v]of Object.entries(STYLE_KW))if(l.includes(k))return v;
+  return null;
+}
+
+function buildDeck(opts){
+  const{archetype:archIn,style:styleIn,includeCards,excludeCards,allowForbidden,deckSize}=opts;
+  const arch=archIn?resolveArch(archIn):null;
+  let style=styleIn||null;
+  if(!style&&arch)style=ARCH_STYLES[arch]||"MIDRANGE";
+  if(!style)style="MIDRANGE";
+  const excSet=new Set();
+  for(const n of excludeCards){const c=resolveCard(n);if(c)excSet.add(c.name)}
+  const main={};
+  const extra={};
+  const mainCt=()=>Object.values(main).reduce((a,v)=>a+v.count,0);
+  const extraCt=()=>Object.values(extra).reduce((a,v)=>a+v.count,0);
+
+  function tryAdd(card,cnt){
+    if(!card||excSet.has(card.name))return false;
+    const mc=maxCopies(card,allowForbidden);
+    if(mc===0)return false;
+    cnt=Math.min(cnt,mc);
+    if(isExtra(card)){
+      if(extra[card.name]||extraCt()+cnt>15)return false;
+      extra[card.name]={card,count:cnt};
+    }else{
+      if(main[card.name]||mainCt()+cnt>deckSize+5)return false;
+      main[card.name]={card,count:cnt};
+    }
+    return true;
+  }
+
+  for(const n of includeCards){
+    const c=resolveCard(n);
+    if(c)tryAdd(c,Math.min(3,maxCopies(c,allowForbidden)));
+  }
+
+  if(arch&&byArch[arch]){
+    const scored=byArch[arch].filter(c=>!excSet.has(c.name)&&!main[c.name]&&!extra[c.name]&&(allowForbidden||banSt(c)!=="Banned"))
+      .map(c=>{
+        let sc=0;const d=(c.desc||"").toLowerCase();const al=arch.toLowerCase();
+        sc+=((d.match(new RegExp(al.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),"gi"))||[]).length)*3;
+        const roles=classifyRoles(c);
+        if(roles.includes("Searcher"))sc+=15;
+        if(roles.includes("Starter"))sc+=12;
+        if(roles.includes("Boss Monster"))sc+=10;
+        if(roles.includes("Negation"))sc+=8;
+        if(roles.includes("Extender"))sc+=7;
+        if(isSpell(c)&&c.race==="Field")sc+=8;
+        if(isExtra(c)){sc+=5;if(roles.includes("Boss Monster")||roles.includes("Negation"))sc+=5}
+        if(d.includes("add")&&d.includes("deck")&&d.includes("hand"))sc+=6;
+        return{card:c,score:sc};
+      }).sort((a,b)=>b.score-a.score);
+
+    const target=Math.floor(deckSize*0.7);let added=0;
+    for(const{card:c,score:sc}of scored){
+      if(added>=target&&!isExtra(c))break;
+      let copies=isExtra(c)?1:(sc>=15?3:sc>=8?2:1);
+      copies=Math.min(copies,maxCopies(c,allowForbidden));
+      if(tryAdd(c,copies)&&!isExtra(c))added+=copies;
+    }
+
+    const archRe=new RegExp(arch.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),"i");
+    const support=allCards.filter(c=>c.archetype!==arch&&!main[c.name]&&!extra[c.name]&&!excSet.has(c.name)&&archRe.test(c.desc||"")&&(allowForbidden||banSt(c)!=="Banned"))
+      .map(c=>({card:c,score:roleScore(classifyRoles(c))+10}))
+      .sort((a,b)=>b.score-a.score).slice(0,6);
+    for(const{card:c}of support){
+      const copies=isExtra(c)?1:Math.min(2,maxCopies(c,allowForbidden));
+      tryAdd(c,copies);
+    }
+  }
+
+  const curHT=Object.values(main).reduce((a,v)=>{return a+(KNOWN_HT.has(v.card.name)?v.count:0)},0);
+  const r=RATIOS[style]||RATIOS.MIDRANGE;
+
+  function addFromList(list,target){
+    let added=0;
+    for(const[name,dc]of list){
+      if(added>=target)break;
+      const c=byName[name];if(!c||main[c.name]||extra[c.name])continue;
+      const copies=Math.min(dc,maxCopies(c,allowForbidden),target-added);
+      if(copies>0&&tryAdd(c,copies))added+=copies;
+    }
+  }
+
+  if(curHT<r.ht[0])addFromList(HT_LIST,r.ht[0]-curHT);
+  if(style==="COMBO"||style==="AGGRO")addFromList(AH_LIST,2);
+  if(style==="AGGRO"||style==="MIDRANGE")addFromList(BB_LIST,3);
+  addFromList(POT_LIST,1);
+  if(style==="CONTROL"||style==="STUN")addFromList(TR_LIST,4);
+  if(style==="STUN")addFromList(FL_LIST,6);
+
+  if(mainCt()<deckSize)addFromList(HT_LIST,deckSize-mainCt());
+  if(mainCt()<deckSize)addFromList(BB_LIST,deckSize-mainCt());
+
+  const mainList=Object.values(main).map(v=>v.card);
+  const hasTuners=mainList.some(c=>c.type.includes("Tuner"));
+  const hasLevels=mainList.some(c=>isMonster(c)&&cardLv(c)>0);
+  const hasFusion=mainList.some(c=>(c.desc||"").includes("Fusion")||(c.name||"").includes("Polymerization"));
+
+  for(const[name,cnt]of ED_LINK){const c=byName[name];if(c)tryAdd(c,cnt)}
+  if(hasLevels)for(const[name,cnt]of ED_XYZ){const c=byName[name];if(c)tryAdd(c,cnt)}
+  if(hasTuners)for(const[name,cnt]of ED_SYN){const c=byName[name];if(c)tryAdd(c,cnt)}
+  if(hasFusion)for(const[name,cnt]of ED_FUS){const c=byName[name];if(c)tryAdd(c,cnt)}
+
+  while(mainCt()>deckSize){
+    let worst=null,worstS=Infinity;
+    for(const[n,v]of Object.entries(main)){
+      const s=roleScore(classifyRoles(v.card));
+      if(s<worstS){worstS=s;worst=n}
+    }
+    if(!worst)break;
+    if(main[worst].count>1)main[worst].count--;
+    else delete main[worst];
+  }
+  while(mainCt()<deckSize){
+    let best=null,bestS=-1;
+    for(const c of allCards){
+      if(main[c.name]||isExtra(c)||excSet.has(c.name))continue;
+      if(!allowForbidden&&banSt(c)==="Banned")continue;
+      const roles=classifyRoles(c);
+      if(roles.length===1&&roles[0]==="Generic")continue;
+      const s=roleScore(roles);
+      if(s>bestS){bestS=s;best=c}
+    }
+    if(!best)break;
+    const cnt=Math.min(maxCopies(best,allowForbidden),deckSize-mainCt());
+    main[best.name]={card:best,count:cnt};
+  }
+
+  const sortFn=(a,b)=>{
+    const ta=isMonster(a.card)?0:(isSpell(a.card)?1:2);
+    const tb=isMonster(b.card)?0:(isSpell(b.card)?1:2);
+    if(ta!==tb)return ta-tb;
+    return roleScore(classifyRoles(b.card))-roleScore(classifyRoles(a.card));
+  };
+
+  const mainDeck=Object.values(main).sort(sortFn);
+  const extraDeck=Object.values(extra).sort((a,b)=>(a.card.type>b.card.type?1:-1));
+
+  const mc=mainDeck.reduce((a,v)=>a+v.count,0);
+  const ec=extraDeck.reduce((a,v)=>a+v.count,0);
+  const errors=[];
+  if(mc<40)errors.push(`Main deck: ${mc} cards (min 40)`);
+  if(mc>60)errors.push(`Main deck: ${mc} cards (max 60)`);
+  if(ec>15)errors.push(`Extra deck: ${ec} cards (max 15)`);
+
+  return{
+    name:(arch||"Custom")+" Deck",
+    archetype:arch||"",style,
+    mainDeck,extraDeck,
+    mainCount:mc,extraCount:ec,
+    valid:errors.length===0,errors,
+  };
+}
+
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll(".pg").forEach(x=>x.classList.remove("on"));
+  t.classList.add("on");
+  document.getElementById("pg-"+t.dataset.t).classList.add("on");
+}));
+
+function renderQuickChips(){
+  const el=document.getElementById("qchips");
+  el.innerHTML=QUICK_ARCHS.filter(a=>byArch[a]).map(a=>`<span class="chip" onclick="document.getElementById('inp-arch').value='${a}'">${a}</span>`).join("");
+}
+
+function cardCls(c){return isExtra(c)?"x":isSpell(c)?"s":isTrap(c)?"t":"m"}
+function banBadge(c){const b=banSt(c);if(b==="Banned")return'<span class="cb bd">BANNED</span>';if(b==="Limited")return'<span class="cb lt">Limited</span>';if(b==="Semi-Limited")return'<span class="cb sm">Semi</span>';return""}
+
+function cardMeta(c){
+  const p=[];
+  if(c.attribute)p.push(c.attribute);
+  if(c.race)p.push(c.race);
+  if(c.linkval)p.push("Link-"+c.linkval);
+  else if(c.rank)p.push("Rank "+c.rank);
+  else if(c.level)p.push("Lv."+c.level);
+  if(c.atk!=null){if(c.linkval)p.push("ATK "+c.atk);else p.push(c.atk+"/"+(c.def!=null?c.def:"?"))}
+  if(isSpell(c))p.push(c.race+" Spell");
+  if(isTrap(c))p.push(c.race+" Trap");
+  return p.join(" / ");
+}
+
+function showCardModal(c){
+  const roles=classifyRoles(c);
+  const cls=cardCls(c);
+  let fields="";
+  if(c.attribute)fields+=`<div class="mf"><span class="lb">Attribute:</span> ${c.attribute}</div>`;
+  if(c.race)fields+=`<div class="mf"><span class="lb">Type:</span> ${c.race}</div>`;
+  if(c.level)fields+=`<div class="mf"><span class="lb">Level:</span> ${c.level}</div>`;
+  if(c.rank)fields+=`<div class="mf"><span class="lb">Rank:</span> ${c.rank}</div>`;
+  if(c.linkval)fields+=`<div class="mf"><span class="lb">Link:</span> ${c.linkval}</div>`;
+  if(c.atk!=null)fields+=`<div class="mf"><span class="lb">ATK:</span> ${c.atk}</div>`;
+  if(c.def!=null)fields+=`<div class="mf"><span class="lb">DEF:</span> ${c.def}</div>`;
+  if(c.archetype)fields+=`<div class="mf"><span class="lb">Archetype:</span> ${c.archetype}</div>`;
+  fields+=`<div class="mf"><span class="lb">Status:</span> ${banSt(c)}</div>`;
+  fields+=`<div class="mf"><span class="lb">Roles:</span> ${roles.join(", ")}</div>`;
+  document.getElementById("mcon").innerHTML=`<h3 class="cn ${cls}">${c.name}</h3><div class="mf"><span class="lb">Card Type:</span> ${c.type}</div>${fields}<div class="mdesc">${c.desc||"No description."}</div><button class="btn bs" onclick="document.getElementById('cmod').classList.remove('sh')" style="margin-top:14px">Close</button>`;
+  document.getElementById("cmod").classList.add("sh");
+}
+
+let lastDeck=null;
+
+function doBuild(){
+  if(!dbReady){alert("Card database not loaded yet. Please wait.");return}
+  const archIn=document.getElementById("inp-arch").value;
+  const styleIn=document.getElementById("inp-style").value;
+  const incRaw=document.getElementById("inp-inc").value;
+  const excRaw=document.getElementById("inp-exc").value;
+  const allowFb=document.getElementById("inp-fb").checked;
+  const sz=parseInt(document.getElementById("inp-sz").value)||40;
+
+  const incCards=incRaw?incRaw.split(",").map(s=>s.trim()).filter(Boolean):[];
+  const excCards=excRaw?excRaw.split(",").map(s=>s.trim()).filter(Boolean):[];
+
+  let style=styleIn||detectStyle(archIn)||null;
+  let archetype=null;
+  if(archIn){
+    for(const w of archIn.split(/[\s,]+/)){
+      const r=resolveArch(w);if(r){archetype=w;break}
+    }
+    if(!archetype)archetype=archIn;
+  }
+
+  document.getElementById("buildBtn").style.display="none";
+  document.getElementById("bld-ld").style.display="block";
+  document.getElementById("deck-out").innerHTML="";
+
+  setTimeout(()=>{
+    try{
+      const deck=buildDeck({archetype:archetype||"",style,includeCards:incCards,excludeCards:excCards,allowForbidden:allowFb,deckSize:sz});
+      lastDeck=deck;
+      renderDeck(deck);
+    }catch(e){
+      document.getElementById("deck-out").innerHTML=`<div style="color:var(--red);padding:20px">Error: ${e.message}</div>`;
+    }
+    document.getElementById("buildBtn").style.display="block";
+    document.getElementById("bld-ld").style.display="none";
+  },50);
+}
+
+function renderDeck(d){
+  const out=document.getElementById("deck-out");
+  const mons=d.mainDeck.filter(v=>isMonster(v.card)&&!isExtra(v.card));
+  const spls=d.mainDeck.filter(v=>isSpell(v.card));
+  const trps=d.mainDeck.filter(v=>isTrap(v.card));
+  const mc=mons.reduce((a,v)=>a+v.count,0);
+  const sc=spls.reduce((a,v)=>a+v.count,0);
+  const tc=trps.reduce((a,v)=>a+v.count,0);
+
+  function section(title,items,cls,total){
+    if(!items.length)return"";
+    let h=`<div class="ds"><div class="st"><span class="cn ${cls}">${title} (${total})</span></div>`;
+    for(const{card:c,count:n}of items){
+      const roles=classifyRoles(c);
+      h+=`<div class="ce" onclick='showCardModal(byName[${JSON.stringify(c.name)}])'><div>${n>1?`<span class="cc">${n}x </span>`:""}<span class="cn ${cardCls(c)}">${c.name}</span>${banBadge(c)}</div><div class="cm">${cardMeta(c)}</div><div class="cr">${roles.slice(0,3).join(", ")}</div></div>`;
+    }
+    return h+"</div>";
+  }
+
+  let html=`<div class="dh"><h2>${d.name}</h2><div class="i">Style: ${d.style} | Main: ${d.mainCount} | Extra: ${d.extraCount}</div><span class="vb ${d.valid?"v":"iv"}">${d.valid?"VALID":"ISSUES"}</span>${d.errors.map(e=>`<div style="color:var(--red);font-size:.78em;margin-top:3px">${e}</div>`).join("")}</div>`;
+  html+=section("Monsters",mons,"m",mc);
+  html+=section("Spells",spls,"s",sc);
+  html+=section("Traps",trps,"t",tc);
+  if(d.extraDeck.length)html+=section("Extra Deck",d.extraDeck,"x",d.extraCount);
+  html+=`<div class="er"><button class="btn bg bsm" onclick="exportYDK()">Download .ydk</button><button class="btn bs bsm" onclick="copyList()">Copy List</button></div>`;
+  out.innerHTML=html;
+  out.scrollIntoView({behavior:"smooth"});
+}
+
+function exportYDK(){
+  if(!lastDeck)return;
+  let lines=["#created by YuGiOh AI Deck Builder","#main"];
+  for(const{card:c,count:n}of lastDeck.mainDeck)for(let i=0;i<n;i++)lines.push(""+c.id);
+  lines.push("#extra");
+  for(const{card:c,count:n}of lastDeck.extraDeck)for(let i=0;i<n;i++)lines.push(""+c.id);
+  lines.push("!side");
+  const blob=new Blob([lines.join("\n")],{type:"text/plain"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download=(lastDeck.archetype||"deck").replace(/[^a-zA-Z0-9-_ ]/g,"")+".ydk";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+
+function copyList(){
+  if(!lastDeck)return;
+  let t=lastDeck.name+"\n\nMain Deck ("+lastDeck.mainCount+"):\n";
+  for(const{card:c,count:n}of lastDeck.mainDeck)t+=(n>1?n+"x ":"")+c.name+"\n";
+  if(lastDeck.extraDeck.length){t+="\nExtra Deck ("+lastDeck.extraCount+"):\n";for(const{card:c}of lastDeck.extraDeck)t+=c.name+"\n"}
+  navigator.clipboard.writeText(t).then(()=>{
+    const toast=document.createElement("div");toast.className="toast";toast.textContent="Deck list copied!";
+    document.body.appendChild(toast);setTimeout(()=>toast.remove(),2200);
+  }).catch(()=>alert(t));
+}
+
+let searchTO;
+function debSearch(){clearTimeout(searchTO);searchTO=setTimeout(doSearch,250)}
+function doSearch(){
+  const q=document.getElementById("sq").value;
+  if(q.length<2){document.getElementById("sres").innerHTML="";return}
+  const best=resolveCard(q);
+  const ql=q.toLowerCase();
+  const results=allCards.filter(c=>c.name.toLowerCase().includes(ql)).slice(0,30);
+  let html="";
+  if(best){
+    const roles=classifyRoles(best);
+    html+=`<div class="sr" onclick="showCardModal(byName[${JSON.stringify(best.name)}])" style="background:rgba(255,215,0,.05);border:1px solid var(--gold);border-radius:var(--r);margin:10px 0;padding:10px"><div style="font-size:.68em;color:var(--gold);margin-bottom:3px">BEST MATCH</div><div class="cn ${cardCls(best)}" style="font-size:1em">${best.name}</div><div class="cm">${best.type} ${best.archetype?"("+best.archetype+")":""}</div><div class="cr">${roles.join(", ")}</div></div>`;
+  }
+  for(const c of results){
+    html+=`<div class="sr" onclick="showCardModal(byName[${JSON.stringify(c.name)}])"><span class="cn ${cardCls(c)}">${c.name}</span>${banBadge(c)}<div class="cm">${c.type} ${c.archetype?"| "+c.archetype:""}</div></div>`;
+  }
+  document.getElementById("sres").innerHTML=html||'<div style="padding:20px;color:var(--dim)">No results.</div>';
+}
+
+function showBan(cat,btn){
+  document.querySelectorAll(".bt").forEach(t=>t.classList.remove("on"));
+  if(btn)btn.classList.add("on");
+  const cards=allCards.filter(c=>{const b=banSt(c);return b===cat});
+  let html="";
+  for(const c of cards.sort((a,b)=>a.name.localeCompare(b.name))){
+    html+=`<div class="be" onclick="showCardModal(byName[${JSON.stringify(c.name)}])"><span class="cn ${cardCls(c)}">${c.name}</span> <span class="cm">${c.type}</span></div>`;
+  }
+  document.getElementById("bres").innerHTML=html||'<div style="padding:20px;color:var(--dim)">None.</div>';
+}
+
+function renderArchList(list){
+  document.getElementById("alist").innerHTML=list.map(a=>`<span class="ae" onclick="document.querySelectorAll('.tab')[0].click();document.getElementById('inp-arch').value='${a.replace(/'/g,"\\'")}'">${a} (${(byArch[a]||[]).length})</span>`).join("");
+}
+function filterArch(){
+  const q=document.getElementById("af").value.toLowerCase();
+  renderArchList(archList.filter(a=>a.toLowerCase().includes(q)));
+}
+
+loadDB();
+</script>
+</body>
+</html>
